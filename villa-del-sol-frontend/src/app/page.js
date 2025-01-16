@@ -5,7 +5,7 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const [data, setData] = useState(null);
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
@@ -18,19 +18,25 @@ export default function Home() {
       return;
     }
 
-    axios.get('http://localhost:4000/api/propietarios', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    .then((response) => {
-      setData(response.data);
-      setLoading(false);
-    })
-    .catch((err) => {
-      setError(err);
-      setLoading(false);
-    });
+    axios
+      .get('http://localhost:4000/api/propietarios', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((response) => {
+        if (response.data && Array.isArray(response.data.message)) {
+          setData(response.data.message);
+        } else {
+          console.error('La respuesta del servidor no tiene el formato esperado:', response.data);
+          setError(new Error('La respuesta del servidor no tiene el formato esperado.'));
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err);
+        setLoading(false);
+      });
   }, [router]);
 
   if (loading) return <div>Loading...</div>;
@@ -41,7 +47,9 @@ export default function Home() {
       <h1 className="text-3xl font-bold">Sistema Administrativo Villa del Sol</h1>
       <ul>
         {data.map((propietario) => (
-          <li key={propietario.id}>{propietario.nombre}</li>
+          <li key={propietario.id}>
+            {propietario.nombre} - {propietario.email}
+          </li>
         ))}
       </ul>
     </div>
